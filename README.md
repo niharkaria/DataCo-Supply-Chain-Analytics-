@@ -268,5 +268,3 @@ MIT License - see [LICENSE](LICENSE) file
 
 *Last Updated: January 2026*
 ```
-
----

@@ -1,0 +1,353 @@
+================================================================================
+DataCo Supply Chain Analytics - Power BI Dashboard
+Technical Documentation
+================================================================================
+
+PROJECT OVERVIEW
+--------------------------------------------------------------------------------
+Business intelligence dashboard analyzing 180,520 supply chain transactions
+to identify operational inefficiencies and revenue optimization opportunities.
+
+Dataset: DataCo Smart Supply Chain Dataset
+Records: 180,520 transactions
+Period: 2015-2018
+Scope: Global supply chain operations
+
+================================================================================
+DATA PREPARATION
+================================================================================
+
+Source Files:
+- DataCoSupplyChainDataset.csv (raw transactional data)
+- DescriptionDataCoSupplyChain (data dictionary)
+- tokenized_access_logs (supplementary)
+
+Cleaning Steps (Excel):
+1. Removed duplicate records
+2. Standardized date formats to MM/DD/YYYY
+3. Created calculated columns:
+   - Delivery_Days = Delivery Date - Order Date
+   - Profit_Margin_% = (Order Profit / Sales) * 100
+   - Late_Delivery_Flag = IF(Real Days > Scheduled Days, "Late", "On Time")
+4. Handled null values in profit and delivery columns
+5. Exported clean data: DataCo_Cleaned.xlsx
+
+================================================================================
+DATA MODEL
+================================================================================
+
+Schema Type: Star Schema
+
+Fact Table:
+- DataCoSupplyChainDataset (180,520 rows, 56 columns)
+
+Dimension Tables:
+- Calendar (Date dimension with year, quarter, month, week attributes)
+
+Relationships:
+- Calendar[Date] → DataCoSupplyChainDataset[order date] (1:Many)
+
+Calendar Table (DAX):
+Calendar =
+ADDCOLUMNS(
+CALENDAR(DATE(2015,1,1), DATE(2025,12,31)),
+"Year", YEAR([Date]),
+"Quarter", "Q" & QUARTER([Date]),
+"Month", MONTH([Date]),
+"MonthName", FORMAT([Date], "MMM"),
+"MonthYear", FORMAT([Date], "MMM YYYY"),
+"WeekNum", WEEKNUM([Date]),
+"DayOfWeek", FORMAT([Date], "dddd")
+)
+
+================================================================================
+DAX MEASURES
+================================================================================
+
+Revenue Metrics:
+--------------------------------------------------
+Total Revenue = SUM(DataCoSupplyChainDataset[Sales])
+
+Total Profit = SUM(DataCoSupplyChainDataset[Order Profit Per Order])
+
+Profit Margin % = DIVIDE([Total Profit], [Total Revenue], 0)
+
+Avg Revenue per Customer = DIVIDE([Total Revenue], [Total Customers], 0)
+
+
+Order Metrics:
+--------------------------------------------------
+Total Orders = DISTINCTCOUNT(DataCoSupplyChainDataset[Order Id])
+
+
+Delivery Performance:
+--------------------------------------------------
+Avg Delivery Days = AVERAGE(DataCoSupplyChainDataset[Delivery Days])
+
+On Time Deliveries = 
+CALCULATE(
+    COUNTROWS(DataCoSupplyChainDataset),
+    DataCoSupplyChainDataset[Late_Delivery_Flag] = "On Time"
+)
+
+On Time Delivery % = 
+DIVIDE(
+    [On Time Deliveries],
+    COUNTROWS(DataCoSupplyChainDataset),
+    0
+)
+
+Late Deliveries = 
+CALCULATE(
+    COUNTROWS(DataCoSupplyChainDataset),
+    DataCoSupplyChainDataset[Late_Delivery_Flag] = "Late"
+)
+
+
+Customer Metrics:
+--------------------------------------------------
+Total Customers = DISTINCTCOUNT(DataCoSupplyChainDataset[Customer Id])
+
+Repeat Customers = 
+CALCULATE(
+    DISTINCTCOUNT(DataCoSupplyChainDataset[Customer Id]),
+    FILTER(
+        VALUES(DataCoSupplyChainDataset[Customer Id]),
+        [Total Orders] > 1
+    )
+)
+
+Repeat Purchase Rate = DIVIDE([Repeat Customers], [Total Customers], 0)
+
+
+Targets:
+--------------------------------------------------
+Target On Time % = 95
+
+================================================================================
+DASHBOARD STRUCTURE
+================================================================================
+
+Page 1: Executive Dashboard
+--------------------------------------------------
+Purpose: High-level business performance overview
+
+Visuals:
+- KPI Cards: Revenue, Orders, Profit, Profit Margin %
+- Line Chart: Revenue trend over time
+- Bar Chart: Top 10 products by revenue
+- Map: Geographic revenue distribution
+- Gauge: On-time delivery performance vs target
+- Donut Chart: Orders by shipping mode
+- Slicer: Date range filter
+
+Key Metrics:
+- Total Revenue: $37M
+- Total Orders: 66K
+- Profit Margin: 10.8%
+- On-Time Delivery: 42.7%
+
+
+Page 2: Sales Performance Analysis
+--------------------------------------------------
+Purpose: Revenue analysis by category and segment
+
+Visuals:
+- Matrix: Revenue by category & region (heat map)
+- Column Chart: Revenue & profit by customer segment
+- Area Chart: Annual revenue & profit trend
+
+Features:
+- Conditional formatting (purple gradient heat map)
+- Top N filtering
+
+
+Page 3: Supply Chain Operations
+--------------------------------------------------
+Purpose: Logistics and delivery performance monitoring
+
+Visuals:
+- Bar Chart: On-time delivery % by shipping mode (gradient: red to green)
+- Column Chart: On-time delivery % by region (with 95% target line)
+- Column Chart: Average delivery days by region
+- Treemap: Top 10 categories with late deliveries
+
+Key Findings:
+- Standard Class: Best performing shipping mode
+- Second Class: Worst performing shipping mode
+- Cleats: Highest late delivery volume
+
+
+Page 4: Customer Intelligence
+--------------------------------------------------
+Purpose: Customer segmentation and behavior analysis
+
+Visuals:
+- Pie Chart: Customer distribution by segment
+- Table: Top 10 customers by revenue
+- KPI Cards: Avg revenue per customer, Repeat purchase rate
+- Bar Chart: Revenue by customer segment
+- Line Chart: Annual revenue trend
+
+Key Metrics:
+- Total Customers: 20,652
+- Consumer Segment: 52%
+- Avg Revenue/Customer: $2K
+- Repeat Purchase Rate: 57%
+
+
+Page 5: Product Analysis
+--------------------------------------------------
+Purpose: Product portfolio performance evaluation
+
+Visuals:
+- Treemap: Top 10 categories by revenue (purple gradient)
+- Column Chart: Profit margin % by category (conditional: red to green)
+- Scatter Chart: Revenue vs profit (Top 5 categories)
+- Line Chart: Revenue trend by top 5 categories
+
+Key Findings:
+- Fishing: Highest revenue category
+- Golf Bags & Carts: Highest profit margin (17.5%)
+
+================================================================================
+DESIGN SPECIFICATIONS
+================================================================================
+
+Color Palette:
+- Primary: #6B46C1 (Deep Purple)
+- Accent: #00D9FF (Bright Cyan)
+- Success: #00E676 (Green)
+- Warning: #FF6B35 (Orange)
+- Alert: #FF1744 (Red)
+- Background: #FAFAFA (Light Cream)
+- Cards: #FFFFFF (White)
+- Borders: #E2E8F0 (Light Gray)
+
+Typography:
+- Font Family: Segoe UI
+- Headers: 24pt Bold
+- Titles: 14pt Bold
+- Labels: 11-12pt Regular
+- Values: 10pt Regular
+
+Visual Standards:
+- Border radius: 10px
+- Border width: 2px
+- Background transparency: 0%
+- Consistent spacing and alignment
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+Financial Performance:
+- Total Revenue: $37M
+- Total Profit: $4M
+- Profit Margin: 10.8%
+- Revenue Trend: Declining (2016 peak: $10.3K → 2018: $551)
+
+Operational Performance:
+- On-Time Delivery Rate: 42.7% (52.3 points below 95% target)
+- Average Delivery: 3 days across all regions
+- Standard Class: Best shipping performance
+- Second Class: Poorest shipping performance
+
+Customer Analysis:
+- Total Customers: 20,652
+- Consumer: 52%, Corporate: 30%, Home Office: 18%
+- Average Revenue per Customer: $2,000
+- Repeat Purchase Rate: 57%
+- Top Region: Europe
+
+Product Analysis:
+- Top Revenue Category: Fishing
+- Highest Margin Category: Golf Bags & Carts (17.5%)
+- Highest Late Deliveries: Cleats category
+
+================================================================================
+TECHNICAL IMPLEMENTATION
+================================================================================
+
+Tools Used:
+- Power BI Desktop
+- Microsoft Excel
+- DAX (Data Analysis Expressions)
+- Power Query
+
+Advanced Features:
+- Star schema data modeling
+- Time intelligence calculations
+- Conditional formatting
+- Top N filtering
+- Heat map visualizations
+- Gradient color scales
+- Interactive cross-filtering
+- Target benchmarking
+
+================================================================================
+PROJECT STRUCTURE
+================================================================================
+
+DataCo_PowerBI_Project/
+│
+├── Raw_Data/
+│   ├── DataCoSupplyChainDataset.csv
+│   ├── DescriptionDataCoSupplyChain
+│   └── tokenized_access_logs
+│
+├── Cleaned_Data/
+│   └── DataCo_Cleaned.xlsx
+│
+├── PowerBI_Files/
+│   └── DataCo_Supply_Chain_Dashboard.pbix
+│
+├── Screenshots/
+│   ├── 01_Executive_Dashboard.png
+│   ├── 02_Sales_Performance.png
+│   ├── 03_Supply_Chain_Operations.png
+│   ├── 04_Customer_Intelligence.png
+│   └── 05_Product_Analysis.png
+│
+└── Documentation/
+    └── Technical_Documentation.txt
+
+================================================================================
+REPOSITORY
+================================================================================
+
+GitHub Repository: https://github.com/niharkaria
+
+Repository Structure:
+- /data (sample/anonymized data only - not full dataset due to size)
+- /documentation (txt file)
+- /screenshots (dashboard images)
+- /powerbi (PBIX file)
+- README.md (project overview)
+
+Installation Instructions:
+1. Clone repository
+2. Open DataCo_Supply_Chain_Dashboard.pbix in Power BI Desktop
+3. Update data source path to local DataCo_Cleaned.xlsx location
+4. Refresh data
+
+================================================================================
+VERSION HISTORY
+================================================================================
+
+Version 1.0 - January 2026
+- Initial release
+- 5 dashboards created
+- 15+ DAX measures implemented
+- Complete documentation
+
+================================================================================
+CONTACT & ATTRIBUTION
+================================================================================
+
+Project Type: Portfolio/Educational
+Dataset Source: DataCo Smart Supply Chain Dataset
+Created: January 2026
+License: MIT License
+
+================================================================================

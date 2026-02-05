@@ -125,9 +125,6 @@ Repeat Purchase Rate = DIVIDE([Repeat Customers], [Total Customers], 0)
 ```
 DataCo_PowerBI_Project/
 │
-├── data/
-│   └── DataCo_Cleaned.xlsx
-│
 ├── powerbi/
 │   └── DataCo_Dashboard.pbix
 │
@@ -266,5 +263,8 @@ MIT License - see [LICENSE](LICENSE) file
 
 ---
 
-*Last Updated: January 2026*
-```
+*Last Updated: February 2026*
+
+> **📢 Note**: The cleaned Excel data file (.xlsx) is not included due to size constraints. 
+> The Power BI dashboard file (.pbix) and all screenshots are available in this repository.
+
